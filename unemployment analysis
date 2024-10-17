@@ -1,0 +1,58 @@
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from statsmodels.tsa.arima.model import ARIMA
+from sklearn.metrics import mean_squared_error
+
+file_path = r'D:\data science internship\Unemployment_Rate_upto_11_2020.csv'  
+data = pd.read_csv(file_path)
+
+data['Date'] = pd.to_datetime(data['Date'], dayfirst=True)
+
+print(data.columns) 
+
+
+data.columns = data.columns.str.strip()
+
+
+data.fillna(method='ffill', inplace=True)
+
+data_covid = data[(data['Date'] >= '2020-01-01') & (data['Date'] <= '2021-12-31')]
+
+
+plt.figure(figsize=(10,6))
+plt.plot(data['Date'], data['Estimated Unemployment Rate (%)'], label='Unemployment Rate', color='b')
+plt.title('Unemployment Rate Over Time')
+plt.xlabel('Date')
+plt.ylabel('Unemployment Rate (%)')
+plt.legend()
+plt.show()
+
+
+series = data['Estimated Unemployment Rate (%)'].values
+
+
+train_size = int(len(series) * 0.80)
+train, test = series[0:train_size], series[train_size:]
+
+model = ARIMA(train, order=(5,1,0))  
+model_fit = model.fit()
+
+
+predictions = model_fit.forecast(steps=len(test))
+
+
+plt.figure(figsize=(10,6))
+plt.plot(test, label='Actual Unemployment Rate', color='blue')
+plt.plot(predictions, color='red', label='Predicted Unemployment Rate')
+plt.title('Actual vs Predicted Unemployment Rate')
+plt.xlabel('Time')
+plt.ylabel('Unemployment Rate (%)')
+plt.legend()
+plt.show()
+
+
+rmse = np.sqrt(mean_squared_error(test, predictions))
+print(f'Root Mean Squared Error (RMSE): {rmse}')
